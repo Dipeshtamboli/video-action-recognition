@@ -29,9 +29,9 @@ class C3D(nn.Module):
 
         self.fc6 = nn.Linear(8192, 4096)
         self.fc7 = nn.Linear(4096, 4096)
-        # self.fc8 = nn.Linear(4096, num_classes)
-        self.fc8 = nn.Linear(4096, 300)
-        self.fc9 = nn.Linear(300, 51)
+        self.fc8 = nn.Linear(4096, num_classes)
+        # self.fc8 = nn.Linear(4096, 300)
+        # self.fc9 = nn.Linear(300, 51)
 
 
         self.dropout = nn.Dropout(p=0.5)
@@ -81,13 +81,14 @@ class C3D(nn.Module):
         x = self.relu(self.full_batchnorm2(self.fc7(x)))
         x = self.dropout(x)
 
-        vid_mse_300 = self.fc8(x)
+        # vid_mse_300 = self.fc8(x)
+        logits = self.fc8(x)
 
-        logits_51 = self.fc9(vid_mse_300)
+        # logits_51 = self.fc9(vid_mse_300)
 
 
 
-        return logits_51,vid_mse_300
+        return logits
 
 
     def __init_weight(self):

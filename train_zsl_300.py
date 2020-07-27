@@ -16,9 +16,9 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from data_preprocessing_16_frames import VideoDataset
 import model_300_zsl
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 # torch.backends.cudnn.benchmark = False
-special_info_for_run = "  300_feats_gzsl"
+# special_info_for_run = "  300_feats_gzsl"
 
 def send_message(send_string):
     headers = {
@@ -30,12 +30,13 @@ def send_message(send_string):
 send_message("code started")
 std_start_time = time.time()
 # Use GPU if available else revert to CPU
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+gpu_id = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
 
 # device = torch.device("cuda:0")
-print("Device being used:", device)
+print("Device being used:", device, "| gpu_id: ", gpu_id)
 
 nEpochs = 100  #100 Number of epochs for training
 resume_epoch = 0  # Default is 0, change if want to resume
@@ -108,7 +109,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
         print('We only implemented C3D and R2Plus1D models.')
         raise NotImplementedError
     criterion_CEL = nn.CrossEntropyLoss()  # standard crossentropy loss for classification
-    criterion_MSE = nn.MSELoss()  # standard crossentropy loss for classification
+    # criterion_MSE = nn.MSELoss()  # standard crossentropy loss for classification
     # optimizer = optim.SGD(train_params, lr=lr, momentum=0.9, weight_decay=5e-2)
     optimizer = optim.Adam(train_params, lr=lr)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10,
@@ -127,7 +128,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters()) / 1000000.0))
     model.to(device)
     criterion_CEL.to(device)
-    criterion_MSE.to(device)
+    # criterion_MSE.to(device)
 
     log_dir = os.path.join(save_dir, 'models', datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
     writer = SummaryWriter(log_dir=log_dir)
@@ -142,27 +143,27 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     # val_dataloader = train_dataloader
     # test_dataloader = train_dataloader
 
-    attributes = np.load("../npy_attributes/attributes_101_300.npy") #shape -> (300,101)
-    seen_attributes = np.load("../npy_attributes/seen_attributes_300_51.npy") #shape -> (300,101)
-    unseen_attributes = np.load("../npy_attributes/unseen_attributes_300_50.npy") #shape -> (300,101)
+    # attributes = np.load("../npy_attributes/attributes_101_300.npy") #shape -> (300,101)
+    # seen_attributes = np.load("../npy_attributes/seen_attributes_300_51.npy") #shape -> (300,101)
+    # unseen_attributes = np.load("../npy_attributes/unseen_attributes_300_50.npy") #shape -> (300,101)
     # print("attributes.shape",attributes.shape)    
     # exit()
     trainval_loaders = {'train': train_dataloader, 'test_seen': test_seen_dataloader}
     trainval_sizes = {x: len(trainval_loaders[x].dataset) for x in ['train', 'test_seen']}
     test_seen_size = len(test_seen_dataloader.dataset)
 
-    seen_attributes = np.transpose(seen_attributes)
-    seen_attributes = normalize(seen_attributes, axis=1, norm='l2')
-    seen_attributes = torch.from_numpy(seen_attributes).float().to(device)
-    seen_attributes = Variable(seen_attributes, requires_grad=True)
+    # seen_attributes = np.transpose(seen_attributes)
+    # seen_attributes = normalize(seen_attributes, axis=1, norm='l2')
+    # seen_attributes = torch.from_numpy(seen_attributes).float().to(device)
+    # seen_attributes = Variable(seen_attributes, requires_grad=True)
 
-    unseen_attributes = np.transpose(unseen_attributes)
-    unseen_attributes = normalize(unseen_attributes, axis=1, norm='l2')
-    unseen_attributes = torch.from_numpy(unseen_attributes).float().to(device)
-    unseen_attributes = Variable(unseen_attributes, requires_grad=True)
+    # unseen_attributes = np.transpose(unseen_attributes)
+    # unseen_attributes = normalize(unseen_attributes, axis=1, norm='l2')
+    # unseen_attributes = torch.from_numpy(unseen_attributes).float().to(device)
+    # unseen_attributes = Variable(unseen_attributes, requires_grad=True)
 
-    print(unseen_attributes.shape)
-    print(seen_attributes.shape)
+    # print(unseen_attributes.shape)
+    # print(seen_attributes.shape)
     for epoch in range(resume_epoch, num_epochs):
         # each epoch has a training and validation step
         print("training ...")
@@ -194,7 +195,8 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                 optimizer.zero_grad()
 
                 if phase == 'train':
-                    logits_51,vid_mse_300 = model(inputs)
+                    # logits_51,vid_mse_300 = model(inputs)
+                    logits_51= model(inputs)
                 else:
                     with torch.no_grad():
                         logits_51,vid_mse_300 = model(inputs)
