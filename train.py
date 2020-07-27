@@ -1,3 +1,5 @@
+import argparse
+import pdb
 import timeit
 from datetime import datetime
 import socket
@@ -11,9 +13,6 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import requests
-# from dataloaders.dataset import VideoDataset
-# from network import C3D_model, R2Plus1D_model, R3D_model
-# from model_ucf import C3D
 import model_ucf as C3D_model
 from old_16_frames import VideoDataset
 
@@ -29,9 +28,21 @@ send_dipesh("test timestamp: {}".format(datetime.now()))
 send_dipesh("python file name: "+os.path.abspath(__file__))
 send_dipesh("--- UCF code started ---")
 # Use GPU if available else revert to CPU
+
+parser = argparse.ArgumentParser(description='Video action recogniton training')
+parser.add_argument('--logfile_name', type=str, default="reverse",
+                    help='file name for storing the log file')
+parser.add_argument('--gpu', type=int, default=1,
+                    help='GPU ID, start from 0')
+args = parser.parse_args()
+
+gpu_id = str(args.gpu)
+exp_name = args.logfile_name
+os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print("Device being used:", device)
+print("Device being used:", device, "| gpu_id: ", gpu_id)
 std_start_time = time.time()
+
 nEpochs = 100  # Number of epochs for training
 resume_epoch = 0  # Default is 0, change if want to resume
 useTest = True # See evolution of the test set when training
@@ -104,7 +115,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     model.to(device)
     criterion.to(device)
 
-    log_dir = os.path.join(save_dir, 'models', datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
+    log_dir = os.path.join(save_dir, 'models',exp_name ,datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
     writer = SummaryWriter(log_dir=log_dir)
 
     print('Training model on {} dataset...'.format(dataset))
@@ -134,14 +145,19 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
             else:
                 model.eval()
 
-            for inputs, labels in tqdm(trainval_loaders[phase]):
+            for inputs, labels in (trainval_loaders[phase]):
                 # move inputs and labels to the device the training is taking place on
                 inputs = Variable(inputs, requires_grad=True).to(device)
                 labels = Variable(labels).to(device)
                 optimizer.zero_grad()
 
                 if phase == 'train':
-                    outputs = model(inputs)
+                    inputs_rev = [inputs[:,:,15-i,:,:] for i in range(16)]
+                    inputs_rev = torch.stack(inputs_rev)
+                    inputs_rev = inputs_rev.permute(1,2,0,3,4)
+
+                    # pdb.set_trace()
+                    outputs = model(inputs_rev)
                 else:
                     with torch.no_grad():
                         outputs = model(inputs)
@@ -186,7 +202,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
             running_loss = 0.0
             running_corrects = 0.0
 
-            for inputs, labels in tqdm(test_dataloader):
+            for inputs, labels in (test_dataloader):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
