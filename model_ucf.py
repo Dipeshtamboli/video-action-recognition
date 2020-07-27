@@ -127,8 +127,8 @@ if __name__ == "__main__":
     # att = torch.rand(50, 300)
     net = C3D(num_classes=101, pretrained=False)
 
-    outputs,outputs2= net.forward(inputs)
+    outputs= net.forward(inputs)
     print(outputs.size())
-    print(outputs2.size())
+    # print(outputs2.size())
     # print(outputs3.size())
     # print(outputs4.size())

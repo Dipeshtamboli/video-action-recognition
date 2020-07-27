@@ -10,23 +10,24 @@ from tensorboardX import SummaryWriter
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
-
+import requests
 # from dataloaders.dataset import VideoDataset
 # from network import C3D_model, R2Plus1D_model, R3D_model
-from model_ucf import C3D
+# from model_ucf import C3D
+import model_ucf as C3D_model
 from old_16_frames import VideoDataset
 
 def send_dipesh(send_string):
-    chatwork.send_message(log_id, send_string)
+#    chatwork.send_message(log_id, send_string)
     headers = {
         'Content-type': 'application/json',
     }
     data = '{}{}{}'.format("{\"text\":\"",send_string,"\"}")
     response = requests.post('https://hooks.slack.com/services/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', headers=headers, data=data)
 
-send_dipesh("test timestamp: {}".format(datetime.datetime.now()))
+send_dipesh("test timestamp: {}".format(datetime.now()))
 send_dipesh("python file name: "+os.path.abspath(__file__))
-send_message("--- UCF code started ---")
+send_dipesh("--- UCF code started ---")
 # Use GPU if available else revert to CPU
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Device being used:", device)
@@ -71,7 +72,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     """
 
     if modelName == 'C3D':
-        model = C3D_model.C3D(num_classes=num_classes, pretrained=True)
+        model = C3D_model.C3D(num_classes=num_classes, pretrained=False)
         train_params = [{'params': C3D_model.get_1x_lr_params(model), 'lr': lr},
                         {'params': C3D_model.get_10x_lr_params(model), 'lr': lr * 10}]
     elif modelName == 'R2Plus1D':
@@ -214,5 +215,5 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
 if __name__ == "__main__":
     train_model()
     print("total_time_taken:",int(-(std_start_time - time.time())/3600)," hrs  ", int(-(std_start_time - time.time())/60%60), " mins")
-    send_message("--- UCF code ENDED ---")
+    send_dipesh("--- UCF code ENDED ---")
     
