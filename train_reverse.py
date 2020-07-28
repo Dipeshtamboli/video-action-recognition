@@ -13,7 +13,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import requests
-import model_ucf as C3D_model
+import model_reverse as C3D_model
 from old_16_frames import VideoDataset
 
 def send_dipesh(send_string):
@@ -30,14 +30,14 @@ send_dipesh("--- UCF code started ---")
 # Use GPU if available else revert to CPU
 
 parser = argparse.ArgumentParser(description='Video action recogniton training')
-parser.add_argument('--logfile_name', type=str, default="reverse",
+parser.add_argument('--logfile_name', type=str, default="fwd_rvs_test",
                     help='file name for storing the log file')
 parser.add_argument('--gpu', type=int, default=1,
                     help='GPU ID, start from 0')
 args = parser.parse_args()
 
 gpu_id = str(args.gpu)
-exp_name = args.logfile_name
+log_name = args.logfile_name
 os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Device being used:", device, "| gpu_id: ", gpu_id)
@@ -105,7 +105,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     model.to(device)
     criterion.to(device)
 
-    log_dir = os.path.join(save_dir, 'models',exp_name ,datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
+    log_dir = os.path.join(save_dir, 'models',log_name ,datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
     writer = SummaryWriter(log_dir=log_dir)
 
     print('Training model on {} dataset...'.format(dataset))
@@ -145,12 +145,14 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                     inputs_rev = [inputs[:,:,15-i,:,:] for i in range(16)]
                     inputs_rev = torch.stack(inputs_rev)
                     inputs_rev = inputs_rev.permute(1,2,0,3,4)
-
-                    # pdb.set_trace()
                     outputs = model(inputs, inputs_rev)
                 else:
                     with torch.no_grad():
-                        outputs = model(inputs)
+                        # outputs = model(inputs,inputs)
+                        inputs_rev = [inputs[:,:,15-i,:,:] for i in range(16)]
+                        inputs_rev = torch.stack(inputs_rev)
+                        inputs_rev = inputs_rev.permute(1,2,0,3,4)
+                        outputs = model(inputs, inputs_rev)
 
                 probs = nn.Softmax(dim=1)(outputs)
                 preds = torch.max(probs, 1)[1]

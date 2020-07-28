@@ -31,14 +31,14 @@ class C3D(nn.Module):
         nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2), padding=(0, 1, 1))
         )
         self.fc_block = nn.Sequential(
-        nn.Linear(8192, 4096),
+        nn.Linear(8192*2, 4096),
         nn.BatchNorm1d(4096),
-        nn.ReLU()
-        nn.Dropout(p=0.5)
+        nn.ReLU(),
+        nn.Dropout(p=0.5),
         nn.Linear(4096, 4096),
         nn.BatchNorm1d(4096),
-        nn.ReLU()
-        nn.Dropout(p=0.5)
+        nn.ReLU(),
+        nn.Dropout(p=0.5),
         nn.Linear(4096, num_classes)
         )
 
@@ -54,7 +54,7 @@ class C3D(nn.Module):
         features_y = self.conv_block1(y)
         features_x = features_x.view(-1, 8192)
         features_y = features_y.view(-1, 8192)
-        features = torch.cat((features_x,features_y))
+        features = torch.cat((features_x,features_y), dim=1)
 
         logits = self.fc_block(features)
         # logits_51 = self.fc9(vid_mse_300)
@@ -64,15 +64,15 @@ class C3D(nn.Module):
         return logits
 
 
-#     def __init_weight(self):
-#         for m in self.modules():
-#             if isinstance(m, nn.Conv3d):
-#                 # n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-#                 # m.weight.data.normal_(0, math.sqrt(2. / n))
-#                 torch.nn.init.kaiming_normal_(m.weight)
-#             elif isinstance(m, nn.BatchNorm3d):
-#                 m.weight.data.fill_(1)
-#                 m.bias.data.zero_()
+    def __init_weight(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv3d):
+                # n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                # m.weight.data.normal_(0, math.sqrt(2. / n))
+                torch.nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm3d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
 
 # def get_1x_lr_params(model):
 #     """
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     # att = torch.rand(50, 300)
     net = C3D(num_classes=101, pretrained=False)
 
-    outputs= net.forward(inputs)
+    outputs= net.forward(inputs, inputs)
     print(outputs.size())
     # print(outputs2.size())
     # print(outputs3.size())
