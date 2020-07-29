@@ -30,11 +30,12 @@ send_dipesh("--- UCF code started ---")
 # Use GPU if available else revert to CPU
 
 parser = argparse.ArgumentParser(description='Video action recogniton training')
-parser.add_argument('--logfile_name', type=str, default="fwd_rvs_test",
+parser.add_argument('--logfile_name', type=str, default="rvs_fwd_test",
                     help='file name for storing the log file')
-parser.add_argument('--gpu', type=int, default=1,
+parser.add_argument('--gpu', type=int, default=0,
                     help='GPU ID, start from 0')
 args = parser.parse_args()
+
 
 gpu_id = str(args.gpu)
 log_name = args.logfile_name
@@ -153,7 +154,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                         inputs_rev = [inputs[:,:,15-i,:,:] for i in range(16)]
                         inputs_rev = torch.stack(inputs_rev)
                         inputs_rev = inputs_rev.permute(1,2,0,3,4)
-                        outputs = model(inputs, inputs_rev)
+                        outputs = model(inputs, inputs)
 
                 probs = nn.Softmax(dim=1)(outputs)
                 preds = torch.max(probs, 1)[1]
