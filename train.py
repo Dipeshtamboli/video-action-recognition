@@ -37,7 +37,7 @@ parser.add_argument('--gpu', type=int, default=1,
 args = parser.parse_args()
 
 gpu_id = str(args.gpu)
-exp_name = args.logfile_name
+log_name = args.logfile_name
 os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Device being used:", device, "| gpu_id: ", gpu_id)
@@ -63,14 +63,15 @@ else:
 save_dir_root = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 exp_name = os.path.dirname(os.path.abspath(__file__)).split('/')[-1]
 
-if resume_epoch != 0:
-    runs = sorted(glob.glob(os.path.join(save_dir_root, 'run', 'run_*')))
-    run_id = int(runs[-1].split('_')[-1]) if runs else 0
-else:
-    runs = sorted(glob.glob(os.path.join(save_dir_root, 'run', 'run_*')))
-    run_id = int(runs[-1].split('_')[-1]) + 1 if runs else 0
+# if resume_epoch != 0:
+#     runs = sorted(glob.glob(os.path.join(save_dir_root, 'run', 'run_*')))
+#     run_id = int(runs[-1].split('_')[-1]) if runs else 0
+# else:
+#     runs = sorted(glob.glob(os.path.join(save_dir_root, 'run', 'run_*')))
+#     run_id = int(runs[-1].split('_')[-1]) + 1 if runs else 0
 
-save_dir = os.path.join(save_dir_root, 'run', 'run_' + str(run_id))
+# save_dir = os.path.join(save_dir_root, 'run', 'run_' + str(run_id))
+save_dir = os.path.join(save_dir_root, 'run', log_name)
 modelName = 'C3D' # Options: C3D or R2Plus1D or R3D
 saveName = modelName + '-' + dataset
 
@@ -115,7 +116,8 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     model.to(device)
     criterion.to(device)
 
-    log_dir = os.path.join(save_dir, 'models',exp_name ,datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
+    # log_dir = os.path.join(save_dir, 'models',exp_name ,datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
+    log_dir = os.path.join(save_dir)
     writer = SummaryWriter(log_dir=log_dir)
 
     print('Training model on {} dataset...'.format(dataset))

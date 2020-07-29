@@ -63,14 +63,15 @@ else:
 save_dir_root = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 exp_name = os.path.dirname(os.path.abspath(__file__)).split('/')[-1]
 
-if resume_epoch != 0:
-    runs = sorted(glob.glob(os.path.join(save_dir_root, 'run', 'run_*')))
-    run_id = int(runs[-1].split('_')[-1]) if runs else 0
-else:
-    runs = sorted(glob.glob(os.path.join(save_dir_root, 'run', 'run_*')))
-    run_id = int(runs[-1].split('_')[-1]) + 1 if runs else 0
+# if resume_epoch != 0:
+#     runs = sorted(glob.glob(os.path.join(save_dir_root, 'run', 'run_*')))
+#     run_id = int(runs[-1].split('_')[-1]) if runs else 0
+# else:
+#     runs = sorted(glob.glob(os.path.join(save_dir_root, 'run', 'run_*')))
+#     run_id = int(runs[-1].split('_')[-1]) + 1 if runs else 0
 
-save_dir = os.path.join(save_dir_root, 'run', 'run_' + str(run_id))
+# save_dir = os.path.join(save_dir_root, 'run', 'run_' + str(run_id))
+save_dir = os.path.join(save_dir_root, 'run',log_name)
 modelName = 'C3D' # Options: C3D or R2Plus1D or R3D
 saveName = modelName + '-' + dataset
 
@@ -199,7 +200,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                 labels = labels.to(device)
 
                 with torch.no_grad():
-                    outputs = model(inputs)
+                    outputs = model(inputs, inputs)
                 probs = nn.Softmax(dim=1)(outputs)
                 preds = torch.max(probs, 1)[1]
                 loss = criterion(outputs, labels)
