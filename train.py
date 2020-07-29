@@ -30,9 +30,9 @@ send_dipesh("--- UCF code started ---")
 # Use GPU if available else revert to CPU
 
 parser = argparse.ArgumentParser(description='Video action recogniton training')
-parser.add_argument('--logfile_name', type=str, default="reverse",
+parser.add_argument('--logfile_name', type=str, default="only_rev",
                     help='file name for storing the log file')
-parser.add_argument('--gpu', type=int, default=1,
+parser.add_argument('--gpu', type=int, default=2,
                     help='GPU ID, start from 0')
 args = parser.parse_args()
 
