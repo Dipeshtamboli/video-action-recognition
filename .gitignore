@@ -1,4 +1,6 @@
 __pycache__/*
-run/*
+#run/*
+*.pth.tar
+*.tar
 *.swp
 *.pth
