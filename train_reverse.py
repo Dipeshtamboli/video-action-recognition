@@ -107,7 +107,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     model.to(device)
     criterion.to(device)
 
-    log_dir = os.path.join(save_dir, 'models',log_name ,datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
+    log_dir = os.path.join(save_dir)
     writer = SummaryWriter(log_dir=log_dir)
 
     print('Training model on {} dataset...'.format(dataset))
@@ -186,7 +186,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),
                 'opt_dict': optimizer.state_dict(),
-            }, os.path.join(save_dir, 'models', saveName + '_epoch-' + str(epoch) + '.pth.tar'))
+            }, os.path.join(save_dir, saveName + '_epoch-' + str(epoch) + '.pth.tar'))
             print("Save model at {}\n".format(os.path.join(save_dir, 'models', saveName + '_epoch-' + str(epoch) + '.pth.tar')))
 
         if useTest and epoch % test_interval == (test_interval - 1):
