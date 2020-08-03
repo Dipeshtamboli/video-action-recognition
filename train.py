@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 import argparse
 import pdb
 import timeit
@@ -128,7 +130,8 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     trainval_loaders = {'train': train_dataloader, 'val': val_dataloader}
     trainval_sizes = {x: len(trainval_loaders[x].dataset) for x in ['train', 'val']}
     test_size = len(test_dataloader.dataset)
-
+    labs = []
+    preds = []
     for epoch in range(resume_epoch, num_epochs):
         # each epoch has a training and validation step
         for phase in ['train', 'val']:
@@ -164,6 +167,9 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                     with torch.no_grad():
                         outputs = model(inputs)
 
+                labs += labels.cpu().numpy().tolist()
+                preds += preds.cpu().numpy().tolist()
+
                 probs = nn.Softmax(dim=1)(outputs)
                 preds = torch.max(probs, 1)[1]
                 loss = criterion(outputs, labels)
@@ -175,6 +181,11 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
 
+            conf_mat = confusion_matrix(labs, preds)
+            np.save(".npy".format(os.path.join(save_dir, saveName + '_epoch-' + str(epoch))+'_'+ phase), conf_mat)
+            fig = plt.figure()
+            plt.imshow(conf_mat)
+            writer.add_figure('conf_mat_'+phase, fig, epoch)
             epoch_loss = running_loss / trainval_sizes[phase]
             epoch_acc = running_corrects.double() / trainval_sizes[phase]
 
@@ -195,7 +206,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                 'state_dict': model.state_dict(),
                 'opt_dict': optimizer.state_dict(),
             }, os.path.join(save_dir, saveName + '_epoch-' + str(epoch) + '.pth.tar'))
-            print("Save model at {}\n".format(os.path.join(save_dir, 'models', saveName + '_epoch-' + str(epoch) + '.pth.tar')))
+            print("Save model at {}\n".format(os.path.join(save_dir, saveName + '_epoch-' + str(epoch) + '.pth.tar')))
 
         if useTest and epoch % test_interval == (test_interval - 1):
             model.eval()
