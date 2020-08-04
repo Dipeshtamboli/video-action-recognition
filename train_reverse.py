@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import argparse
@@ -32,9 +33,9 @@ send_dipesh("--- UCF code started ---")
 # Use GPU if available else revert to CPU
 
 parser = argparse.ArgumentParser(description='Video action recogniton training')
-parser.add_argument('--logfile_name', type=str, default="rvs_fwd_test",
+parser.add_argument('--logfile_name', type=str, default="concat_rvs_fwd",
                     help='file name for storing the log file')
-parser.add_argument('--gpu', type=int, default=0,
+parser.add_argument('--gpu', type=int, default=3,
                     help='GPU ID, start from 0')
 args = parser.parse_args()
 
@@ -120,8 +121,8 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     trainval_loaders = {'train': train_dataloader, 'val': val_dataloader}
     trainval_sizes = {x: len(trainval_loaders[x].dataset) for x in ['train', 'val']}
     test_size = len(test_dataloader.dataset)
-    labs = []
-    preds = []
+    lab_list = []
+    pred_list = []
     for epoch in range(resume_epoch, num_epochs):
         # each epoch has a training and validation step
         for phase in ['train', 'val']:
@@ -150,7 +151,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                     inputs_rev = [inputs[:,:,15-i,:,:] for i in range(16)]
                     inputs_rev = torch.stack(inputs_rev)
                     inputs_rev = inputs_rev.permute(1,2,0,3,4)
-                    outputs = model(inputs, inputs_rev)
+                    outputs = model(inputs_rev, inputs)
                 else:
                     with torch.no_grad():
                         # outputs = model(inputs,inputs)
@@ -159,11 +160,12 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                         inputs_rev = inputs_rev.permute(1,2,0,3,4)
                         outputs = model(inputs, inputs)
 
-                labs += labels.cpu().numpy().tolist()
-                preds += preds.cpu().numpy().tolist()
                 probs = nn.Softmax(dim=1)(outputs)
                 preds = torch.max(probs, 1)[1]
                 loss = criterion(outputs, labels)
+
+                lab_list += labels.cpu().numpy().tolist()
+                pred_list += preds.cpu().numpy().tolist()
 
                 if phase == 'train':
                     loss.backward()
@@ -172,8 +174,8 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
                 
-            conf_mat = confusion_matrix(labs, preds)
-            np.save(".npy".format(os.path.join(save_dir, saveName + '_epoch-' + str(epoch))+'_'+ phase), conf_mat)
+            conf_mat = confusion_matrix(lab_list, pred_list)
+            np.save("{}.npy".format(os.path.join(save_dir, saveName + '_epoch-' + str(epoch))+'_'+ phase), conf_mat)
             fig = plt.figure()
             plt.imshow(conf_mat)
             writer.add_figure('conf_mat_'+phase, fig, epoch)
