@@ -33,7 +33,7 @@ send_dipesh("--- UCF code started ---")
 # Use GPU if available else revert to CPU
 
 parser = argparse.ArgumentParser(description='Video action recogniton training')
-parser.add_argument('--logfile_name', type=str, default="fwd",
+parser.add_argument('--logfile_name', type=str, default="attn_fwd",
                     help='file name for storing the log file')
 parser.add_argument('--gpu', type=int, default=3,
                     help='GPU ID, start from 0')
@@ -183,10 +183,10 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                 running_corrects += torch.sum(preds == labels.data)
 
             conf_mat = confusion_matrix(lab_list, pred_list)
-            np.save("{}.npy".format(os.path.join(save_dir, saveName + '_epoch-' + str(epoch))+'_'+ phase), conf_mat)
+            # np.save("{}.npy".format(os.path.join(save_dir, saveName + '_epoch-' + str(epoch))+'_'+ phase), conf_mat)
             fig = plt.figure()
             plt.imshow(conf_mat)
-            writer.add_figure('conf_mat_'+phase, fig, epoch)
+            # writer.add_figure('conf_mat_'+phase, fig, epoch)
             epoch_loss = running_loss / trainval_sizes[phase]
             epoch_acc = running_corrects.double() / trainval_sizes[phase]
 
