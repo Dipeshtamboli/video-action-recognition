@@ -87,8 +87,8 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     """
 
     model = ConvLSTM(
-        num_classes=train_dataset.num_classes,
-        latent_dim=opt.latent_dim,
+        num_classes=num_classes,
+        latent_dim=512,
         lstm_layers=1,
         hidden_dim=1024,
         bidirectional=True,
