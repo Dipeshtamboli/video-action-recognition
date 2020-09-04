@@ -1,3 +1,6 @@
+from old_16_frames import VideoDataset
+from torch.utils.data import DataLoader
+import pdb
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
@@ -128,9 +131,26 @@ class ConvClassifier(nn.Module):
 
     def forward(self, x):
         batch_size, seq_length, c, h, w = x.shape
+        # pdb.set_trace()
         x = x.view(batch_size * seq_length, c, h, w)
         x = self.feature_extractor(x)
         x = x.view(batch_size * seq_length, -1)
         x = self.final(x)
         x = x.view(batch_size, seq_length, -1)
         return x
+if __name__ == '__main__':
+    train_dataloader = DataLoader(VideoDataset(dataset='ucf101', split='train',clip_len=16), batch_size=20, shuffle=True, num_workers=4)
+    model = ConvLSTM(
+        num_classes=101,
+        latent_dim=512,
+        lstm_layers=1,
+        hidden_dim=1024,
+        bidirectional=True,
+        attention=True,
+    )
+    model.to('cuda')
+    for inputs, labels in (train_dataloader):
+        inputs = inputs.permute(0,2,1,3,4)
+        image_sequences = Variable(inputs.to("cuda"), requires_grad=True)        
+        out = model(image_sequences)
+        pdb.set_trace()

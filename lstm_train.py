@@ -35,7 +35,7 @@ send_dipesh("--- UCF code started ---")
 parser = argparse.ArgumentParser(description='Video action recogniton training')
 parser.add_argument('--logfile_name', type=str, default="LSTM",
                     help='file name for storing the log file')
-parser.add_argument('--gpu', type=int, default=3,
+parser.add_argument('--gpu', type=int, default=2,
                     help='GPU ID, start from 0')
 args = parser.parse_args()
 
@@ -113,16 +113,16 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
 
     print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters()) / 1000000.0))
     model.to(device)
-    criterion.to(device)
+    cls_criterion.to(device)
 
     # log_dir = os.path.join(save_dir, 'models',exp_name ,datetime.now().strftime('%b%d_%H-%M-%S') + '_' + socket.gethostname())
     log_dir = os.path.join(save_dir)
     writer = SummaryWriter(log_dir=log_dir)
 
     print('Training model on {} dataset...'.format(dataset))
-    train_dataloader = DataLoader(VideoDataset(dataset=dataset, split='train',clip_len=16), batch_size=20, shuffle=True, num_workers=4)
-    val_dataloader   = DataLoader(VideoDataset(dataset=dataset, split='val',  clip_len=16), batch_size=20, num_workers=4)
-    test_dataloader  = DataLoader(VideoDataset(dataset=dataset, split='test', clip_len=16), batch_size=20, num_workers=4)
+    train_dataloader = DataLoader(VideoDataset(dataset=dataset, split='train',clip_len=16), batch_size=100, shuffle=True, num_workers=4)
+    val_dataloader   = DataLoader(VideoDataset(dataset=dataset, split='val',  clip_len=16), batch_size=100, num_workers=4)
+    test_dataloader  = DataLoader(VideoDataset(dataset=dataset, split='test', clip_len=16), batch_size=100, num_workers=4)
 
     trainval_loaders = {'train': train_dataloader, 'val': val_dataloader}
     trainval_sizes = {x: len(trainval_loaders[x].dataset) for x in ['train', 'val']}
@@ -143,13 +143,14 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
             # or being validated. Primarily affects layers such as BatchNorm or Dropout.
             if phase == 'train':
                 # scheduler.step() is to be called once every epoch during training
-                scheduler.step()
+                # scheduler.step()
                 model.train()
             else:
                 model.eval()
 
             for inputs, labels in (trainval_loaders[phase]):
                 # move inputs and labels to the device the training is taking place on
+                inputs = inputs.permute(0,2,1,3,4)
                 image_sequences = Variable(inputs.to(device), requires_grad=True)
                 labels = Variable(labels.to(device), requires_grad=False)                
 
@@ -215,14 +216,16 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
             running_corrects = 0.0
 
             for inputs, labels in (test_dataloader):
-                inputs = inputs.to(device)
-                labels = labels.to(device)
+                inputs = inputs.permute(0,2,1,3,4)
+                image_sequences = Variable(inputs.to(device), requires_grad=True)
+                labels = Variable(labels.to(device), requires_grad=False)                
 
                 with torch.no_grad():
-                    outputs = model(inputs)
+                    outputs = model(image_sequences)
+                    # predictions = model(image_sequences)
                 probs = nn.Softmax(dim=1)(outputs)
                 preds = torch.max(probs, 1)[1]
-                loss = criterion(outputs, labels)
+                loss = cls_criterion(outputs, labels)
 
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
