@@ -46,7 +46,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Device being used:", device, "| gpu_id: ", gpu_id)
 std_start_time = time.time()
 
-nEpochs = 100  # Number of epochs for training
+nEpochs = 200  # Number of epochs for training
 resume_epoch = 0  # Default is 0, change if want to resume
 useTest = True # See evolution of the test set when training
 nTestInterval = 20 # Run on test set every nTestInterval epochs
@@ -182,10 +182,10 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                 running_corrects += torch.sum(preds == labels.data)
 
             conf_mat = confusion_matrix(lab_list, pred_list)
-            np.save("{}.npy".format(os.path.join(save_dir, saveName + '_epoch-' + str(epoch))+'_'+ phase), conf_mat)
-            fig = plt.figure()
-            plt.imshow(conf_mat)
-            writer.add_figure('conf_mat_'+phase, fig, epoch)
+            # np.save("{}.npy".format(os.path.join(save_dir, saveName + '_epoch-' + str(epoch))+'_'+ phase), conf_mat)
+            # fig = plt.figure()
+            # plt.imshow(conf_mat)
+            # writer.add_figure('conf_mat_'+phase, fig, epoch)
             epoch_loss = running_loss / trainval_sizes[phase]
             epoch_acc = running_corrects.double() / trainval_sizes[phase]
 
@@ -216,11 +216,13 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
             running_corrects = 0.0
 
             for inputs, labels in (test_dataloader):
+                print(inputs.shape)
                 inputs = inputs.permute(0,2,1,3,4)
-                image_sequences = Variable(inputs.to(device), requires_grad=True)
+                image_sequences = Variable(inputs.to(device), requires_grad=False)
                 labels = Variable(labels.to(device), requires_grad=False)                
 
                 with torch.no_grad():
+                    model.lstm.reset_hidden_state()
                     outputs = model(image_sequences)
                     # predictions = model(image_sequences)
                 probs = nn.Softmax(dim=1)(outputs)
