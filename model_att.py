@@ -17,8 +17,15 @@ class C3D(nn.Module):
     def __init__(self, num_classes, pretrained=False):
         super(C3D, self).__init__()
 
-        self.attn_conv2 = nn.Conv3d(128, 128, kernel_size=(3, 28, 28), padding=(1, 0, 0))
-        self.attn_conv4 = nn.Conv3d(512, 512, kernel_size=(3, 7, 7), padding=(1, 0, 0))
+        self.attn_conv2_channel = nn.Conv3d(128, 128, kernel_size=(8, 28, 28), padding=(0, 0, 0))
+        self.attn_conv2_channel_conv = nn.Conv3d(256, 128, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.attn_conv2_temp = nn.Conv3d(128, 1, kernel_size=(3, 28, 28), padding=(1, 0, 0))
+        self.attn_conv2_temp_conv = nn.Conv3d(128, 128, kernel_size=(9, 3, 3), padding=(0, 1, 1))
+
+        self.attn_conv4_channel = nn.Conv3d(512, 512, kernel_size=(2, 7, 7), padding=(0, 0, 0))
+        self.attn_conv4_channel_conv = nn.Conv3d(1024, 512, kernel_size=(3, 3, 3), padding=(1, 1, 1))
+        self.attn_conv4_temp = nn.Conv3d(512, 1, kernel_size=(3, 7, 7), padding=(1, 0, 0))
+        self.attn_conv4_temp_conv = nn.Conv3d(512, 512, kernel_size=(3, 3, 3), padding=(0, 1, 1))
 
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
         self.pool1 = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2))
@@ -73,11 +80,20 @@ class C3D(nn.Module):
         x = self.pool2(x)
         print_f("conv2 out shape: {}".format(x.shape))
 
-        attn_x = self.relu(self.attn_conv2(x))
+        attn_x = self.relu(self.attn_conv2_temp(x))
         sig_attn = torch.sigmoid(attn_x)
         print_f("conv2 attn out shape: {}".format(attn_x.shape))
-        x = x*sig_attn
+        x = torch.cat((x,x*sig_attn),2)
+        x = self.relu(self.attn_conv2_temp_conv(x))
         # pdb.set_trace()
+
+        attn_x = self.relu(self.attn_conv2_channel(x))
+        sig_attn = torch.sigmoid(attn_x)
+        print_f("conv2 attn out shape: {}".format(attn_x.shape))
+        x = torch.cat((x,x*sig_attn),1)
+        x = self.relu(self.attn_conv2_channel_conv(x))
+        print_f("input after conv2 attn shape: {}".format(x.shape))
+
         x = self.relu(self.conv3a(x))
         x = self.relu(self.batchnorm1(self.conv3b(x)))
         x = self.pool3(x)
@@ -89,10 +105,24 @@ class C3D(nn.Module):
         x = self.pool4(x)
         print_f("conv4 out shape: {}".format(x.shape))
 
-        attn_x = self.relu(self.attn_conv4(x))
+        attn_x = self.relu(self.attn_conv4_temp(x))
         sig_attn = torch.sigmoid(attn_x)
-        x = x*sig_attn
         print_f("conv4 attn out shape: {}".format(attn_x.shape))
+        x = torch.cat((x,x*sig_attn),2)
+        x = self.relu(self.attn_conv4_temp_conv(x))
+        # pdb.set_trace()
+
+        attn_x = self.relu(self.attn_conv4_channel(x))
+        sig_attn = torch.sigmoid(attn_x)
+        print_f("conv4 attn out shape: {}".format(attn_x.shape))
+        x = torch.cat((x,x*sig_attn),1)
+        x = self.relu(self.attn_conv4_channel_conv(x))
+        print_f("input after conv4 attn shape: {}".format(x.shape))
+
+        # attn_x = self.relu(self.attn_conv4(x))
+        # sig_attn = torch.sigmoid(attn_x)
+        # x = x*sig_attn
+        # print_f("conv4 attn out shape: {}".format(attn_x.shape))
 
         x = self.relu(self.conv5a(x))
         x = self.relu(self.batchnorm2(self.conv5b(x)))
